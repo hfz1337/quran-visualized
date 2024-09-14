@@ -1,6 +1,7 @@
 # Audio
 data/**/*.mp3
 data/**/*.json
+*.mp4
 
 # Logs
 logs
