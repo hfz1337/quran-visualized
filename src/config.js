@@ -12,7 +12,7 @@ const config = {
   textFgColor: "rgba(255, 255, 255, 1)",
   textBgColor: "rgba(255, 255, 255, 0)",
   textHeight: 150,
-  maxTextWidth: 1000,
+  maxTextWidth: 900,
   smallGlyphMaxSize: 5,
 };
 
