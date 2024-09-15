@@ -1,4 +1,9 @@
-const { trimAudio, makeVideo, getAyahChunks } = require("./utils");
+const {
+  trimAudio,
+  makeVideo,
+  createWaterMark,
+  getAyahChunks,
+} = require("./utils");
 const yargs = require("yargs");
 const fs = require("fs");
 const tmp = require("tmp");
@@ -25,8 +30,11 @@ const generateVideo = async (reciter, sura, ayahRange, background, output) => {
     chunks[chunks.length - 1].timeEnd,
   );
 
+  // Create watermark
+  let watermarkPath = createWaterMark(sura, ayahRange);
+
   // Create the video
-  await makeVideo(trimmedAudio, background, output, chunks);
+  await makeVideo(trimmedAudio, background, watermarkPath, output, chunks);
 
   // Cleanup audio
   fs.unlinkSync(trimmedAudio);

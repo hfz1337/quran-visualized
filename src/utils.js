@@ -1,5 +1,6 @@
 const fs = require("fs");
 const he = require("he");
+const mktemp = require("mktemp");
 const { registerFont, createCanvas } = require("canvas");
 const ffmpeg = require("fluent-ffmpeg");
 const { config } = require("./config");
@@ -108,6 +109,48 @@ const wrapText = (ctx, text, maxWidth) => {
   return lines;
 };
 
+const createWaterMark = (sura, ayahRange) => {
+  let canvas = createCanvas(config.width, config.height, "svg");
+  let ctx = canvas.getContext("2d");
+
+  registerFont(`${config.fontDir}/sura_names.ttf`, { family: "sura_names" });
+  registerFont(`${config.fontDir}/Fondamento-Regular.ttf`, {
+    family: "Fondamento",
+  });
+
+  canvas = createCanvas(config.width, config.height, "svg");
+  ctx = canvas.getContext("2d");
+  ctx.font = "100px sura_names";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(
+    he.decode(`&#${0xe000 + sura};&#xE000;`),
+    config.width / 2 - 14,
+    config.height / 5,
+  );
+
+  ctx.font = "36px Fondamento";
+  ctx.fillText(
+    config.chapters[sura]
+      .concat("  ")
+      .concat(
+        ayahRange.start === ayahRange.end
+          ? ayahRange.start.toString()
+          : `${ayahRange.start}-${ayahRange.end}`,
+      ),
+    config.width / 2,
+    config.height / 5 + 120,
+  );
+
+  const imagePath = "/tmp/".concat(
+    mktemp.createFileSync("XXXXXXXX.svg", { dryRun: true }),
+  );
+  const svgData = canvas.toBuffer();
+  fs.writeFileSync(imagePath, svgData);
+  return imagePath;
+};
+
 /**
  * Get the Ayah chunks (an SVG will be written for each chunk).
  */
@@ -148,12 +191,25 @@ const getAyahChunks = async (sura, ayah, verseTimings) => {
             const segments = verseTimings[ayah - 1].segments;
             const chunks = [];
 
+            // Merge segments where the reciter repeats words
+            let mergedSegments = [];
+            segments.forEach((segment) => {
+              if (
+                mergedSegments.length > 0 &&
+                mergedSegments[mergedSegments.length - 1][0] >= segment[0]
+              ) {
+                mergedSegments[mergedSegments.length - 1][2] = segment[2];
+              } else {
+                mergedSegments.push(segment);
+              }
+            });
+
             lines.forEach((line) => {
-              const timeStart = segments[line.wordStart][1];
+              const timeStart = mergedSegments[line.wordStart][1];
               const timeEnd =
-                line.wordEnd < segments.length
-                  ? segments[line.wordEnd][2]
-                  : segments[segments.length - 1][2];
+                line.wordEnd < mergedSegments.length
+                  ? mergedSegments[line.wordEnd][2]
+                  : mergedSegments[mergedSegments.length - 1][2];
               const imagePath = `/tmp/sura_${sura}_ayah_${ayah}_from_${timeStart}_to_${timeEnd}.svg`;
 
               canvas = createCanvas(config.width, config.height, "svg");
@@ -193,20 +249,31 @@ const getAyahChunks = async (sura, ayah, verseTimings) => {
 /**
  * Assemble the video.
  */
-const makeVideo = async (audioPath, backgroundPath, outFile, chunks) => {
+const makeVideo = async (
+  audioPath,
+  backgroundPath,
+  watermarkPath,
+  outFile,
+  chunks,
+) => {
   return new Promise((resolve, reject) => {
     const videoDuration = Math.ceil(
       (chunks[chunks.length - 1].timeEnd - chunks[0].timeStart) / 1000,
     );
     let command = ffmpeg();
     let complexFilter = [];
-    let index = 2;
-    let videoStream = "[tmp0]";
+    let index = 3;
+    let videoStream = "[tmp1]";
 
     command = command
       .input(audioPath)
       .input(backgroundPath)
-      .inputOptions(["-stream_loop -1", `-t ${videoDuration}`]);
+      .inputOptions(["-stream_loop -1", `-t ${videoDuration}`])
+      .input(watermarkPath)
+      .inputOptions(["-loop 1", `-t ${videoDuration}`]);
+    complexFilter.push("[2:v]scale=1080:1920[watermark]");
+    complexFilter.push("[tmp0][watermark]overlay=0:0[tmp1]");
+
     chunks.forEach((chunk) => {
       command = command
         .input(chunk.imagePath)
@@ -238,6 +305,7 @@ const makeVideo = async (audioPath, backgroundPath, outFile, chunks) => {
         chunks.forEach((chunk) => {
           fs.unlinkSync(chunk.imagePath);
         });
+        fs.unlinkSync(watermarkPath);
         resolve();
       })
       .on("error", (err) => {
@@ -248,4 +316,10 @@ const makeVideo = async (audioPath, backgroundPath, outFile, chunks) => {
   });
 };
 
-module.exports = { trimAudio, wrapText, makeVideo, getAyahChunks };
+module.exports = {
+  trimAudio,
+  wrapText,
+  makeVideo,
+  createWaterMark,
+  getAyahChunks,
+};
