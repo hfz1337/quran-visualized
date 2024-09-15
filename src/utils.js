@@ -125,7 +125,7 @@ const createWaterMark = (sura, ayahRange) => {
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ffffff";
   ctx.fillText(
-    he.decode(`&#${0xe000 + sura};&#xE000;`),
+    he.decode(`&#xE${sura.toString().padStart(3, '0')};&#xE000;`),
     config.width / 2 - 14,
     config.height / 5,
   );
