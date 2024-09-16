@@ -117,8 +117,8 @@ const createWaterMark = (sura, ayahRange) => {
   let ctx = canvas.getContext("2d");
 
   registerFont(`${config.fontDir}/sura_names.ttf`, { family: "sura_names" });
-  registerFont(`${config.fontDir}/Fondamento-Regular.ttf`, {
-    family: "Fondamento",
+  registerFont(`${config.fontDir}/Helvetica.ttf`, {
+    family: "Helvetica",
   });
 
   canvas = createCanvas(config.width, config.height, "svg");
@@ -133,7 +133,7 @@ const createWaterMark = (sura, ayahRange) => {
     config.height / 5,
   );
 
-  ctx.font = "36px Fondamento";
+  ctx.font = "36px Helvetica";
   ctx.fillText(
     config.chapters[sura]
       .concat("  ")
@@ -159,13 +159,13 @@ const createTranslationOverlay = (sura, ayah) => {
   let canvas = createCanvas(config.width, config.height, "svg");
   let ctx = canvas.getContext("2d");
 
-  registerFont(`${config.fontDir}/Fondamento-Regular.ttf`, {
-    family: "Fondamento",
+  registerFont(`${config.fontDir}/Helvetica.ttf`, {
+    family: "Helvetica",
   });
 
   canvas = createCanvas(config.width, config.height, "svg");
   ctx = canvas.getContext("2d");
-  ctx.font = "40px Fondamento";
+  ctx.font = "40px Helvetica";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.lineWidth = 6;
@@ -200,11 +200,13 @@ const createTranslationOverlay = (sura, ayah) => {
   let lines = getLines(ctx, text, maxWidth);
 
   // Calculate the starting y-coordinate to center the block of text
-  let startY = config.height / 2 + 360 - ((lines.length - 1) * lineHeight) / 2;
+  let startY = 0.75*config.height - ((lines.length - 1) * lineHeight) / 2;
 
   // Render each line of text
   lines.forEach((line, index) => {
-    ctx.strokeText(line, config.width / 2, startY + index * lineHeight);
+    if (config.strokText) {
+      ctx.strokeText(line, config.width / 2, startY + index * lineHeight); 
+    }
     ctx.fillText(line, config.width / 2, startY + index * lineHeight);
   });
 

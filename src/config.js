@@ -15,6 +15,7 @@ const config = {
   textFgColor: "rgba(255, 255, 255, 1)",
   textBgColor: "rgba(255, 255, 255, 0)",
   textHeight: 150,
+  strokeText: false,
   maxTextWidth: 900,
   smallGlyphMaxSize: 5,
 };
