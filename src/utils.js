@@ -168,6 +168,8 @@ const createTranslationOverlay = (sura, ayah) => {
   ctx.font = "40px Fondamento";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'black';
   ctx.fillStyle = config.textFgColor;
 
   let text = config.translation[sura][ayah];
@@ -202,6 +204,7 @@ const createTranslationOverlay = (sura, ayah) => {
 
   // Render each line of text
   lines.forEach((line, index) => {
+    ctx.strokeText(line, config.width / 2, startY + index * lineHeight);
     ctx.fillText(line, config.width / 2, startY + index * lineHeight);
   });
 
