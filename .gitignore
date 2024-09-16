@@ -1,6 +1,6 @@
 # Audio
-data/**/*.mp3
-data/**/*.json
+data/audio/**/*.mp3
+data/audio/**/*.json
 *.mp4
 
 # Logs
