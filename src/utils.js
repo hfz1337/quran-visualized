@@ -109,6 +109,9 @@ const wrapText = (ctx, text, maxWidth) => {
   return lines;
 };
 
+/**
+ * Create the watermark overlay containing the Sura name in Uthmani script.
+ */
 const createWaterMark = (sura, ayahRange) => {
   let canvas = createCanvas(config.width, config.height, "svg");
   let ctx = canvas.getContext("2d");
@@ -125,7 +128,7 @@ const createWaterMark = (sura, ayahRange) => {
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ffffff";
   ctx.fillText(
-    he.decode(`&#xE${sura.toString().padStart(3, '0')};&#xE000;`),
+    he.decode(`&#xE${sura.toString().padStart(3, "0")};&#xE000;`),
     config.width / 2 - 14,
     config.height / 5,
   );
@@ -146,6 +149,65 @@ const createWaterMark = (sura, ayahRange) => {
   const imagePath = "/tmp/".concat(
     mktemp.createFileSync("XXXXXXXX.svg", { dryRun: true }),
   );
+  const svgData = canvas.toBuffer();
+  fs.writeFileSync(imagePath, svgData);
+  return imagePath;
+};
+
+/**
+ * Create translation overlay with text wrapping.
+ */
+const createTranslationOverlay = (sura, ayah) => {
+  let canvas = createCanvas(config.width, config.height, "svg");
+  let ctx = canvas.getContext("2d");
+
+  registerFont(`${config.fontDir}/Fondamento-Regular.ttf`, {
+    family: "Fondamento",
+  });
+
+  canvas = createCanvas(config.width, config.height, "svg");
+  ctx = canvas.getContext("2d");
+  ctx.font = "40px Fondamento";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = config.textFgColor;
+
+  let text = config.translation[sura][ayah];
+  let maxWidth = 1000;
+  let lineHeight = 40;
+
+  // Function to split text into lines based on the max width
+  const getLines = (ctx, text, maxWidth) => {
+    let words = text.split(" ");
+    let lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      let word = words[i];
+      let width = ctx.measureText(currentLine + " " + word).width;
+      if (width < maxWidth) {
+        currentLine += " " + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
+  };
+
+  // Get the lines to fit the text within the 900px width
+  let lines = getLines(ctx, text, maxWidth);
+
+  // Calculate the starting y-coordinate to center the block of text
+  let startY = config.height / 2 + 360 - ((lines.length - 1) * lineHeight) / 2;
+
+  // Render each line of text
+  lines.forEach((line, index) => {
+    ctx.fillText(line, config.width / 2, startY + index * lineHeight);
+  });
+
+  const imagePath = `/tmp/sura_${sura}_ayah_${ayah}_translation.svg`;
   const svgData = canvas.toBuffer();
   fs.writeFileSync(imagePath, svgData);
   return imagePath;
@@ -238,6 +300,15 @@ const getAyahChunks = async (sura, ayah, verseTimings) => {
               chunks.push({ imagePath, timeStart, timeEnd });
             });
 
+            // Create translation overlays
+            const translationOverlayPath = createTranslationOverlay(sura, ayah);
+            const { timestamp_from, timestamp_to } = verseTimings[ayah - 1];
+            chunks.push({
+              imagePath: translationOverlayPath,
+              timeStart: timestamp_from,
+              timeEnd: timestamp_to,
+            });
+
             resolve(chunks);
           },
         );
@@ -253,10 +324,18 @@ const makeVideo = async (
   audioPath,
   backgroundPath,
   watermarkPath,
-  outFile,
   chunks,
+  outFile,
 ) => {
   return new Promise((resolve, reject) => {
+    let translations = [];
+    for (var i = chunks.length - 1; i >= 0; i--) {
+      if (chunks[i].imagePath.includes("translation")) {
+        translations.push(chunks.pop());
+      }
+    }
+    chunks.push(...translations);
+
     const videoDuration = Math.ceil(
       (chunks[chunks.length - 1].timeEnd - chunks[0].timeStart) / 1000,
     );

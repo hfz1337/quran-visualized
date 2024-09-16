@@ -34,7 +34,7 @@ const generateVideo = async (reciter, sura, ayahRange, background, output) => {
   let watermarkPath = createWaterMark(sura, ayahRange);
 
   // Create the video
-  await makeVideo(trimmedAudio, background, watermarkPath, output, chunks);
+  await makeVideo(trimmedAudio, background, watermarkPath, chunks, output);
 
   // Cleanup audio
   fs.unlinkSync(trimmedAudio);

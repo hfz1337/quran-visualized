@@ -4,6 +4,9 @@ const fs = require("fs");
 const config = {
   db: new sqlite3.Database("./data/text.sqlite3.db"),
   chapters: JSON.parse(fs.readFileSync("./data/chapters.json")),
+  translation: JSON.parse(
+    fs.readFileSync("./data/translations/saheeh-international.json"),
+  ),
   fontDir: "./data/fonts",
   audioDir: "./data/audio",
   width: 1080,
