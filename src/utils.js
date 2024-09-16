@@ -168,7 +168,7 @@ const createTranslationOverlay = (sura, ayah) => {
   ctx.font = "40px Fondamento";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 6;
   ctx.strokeStyle = 'black';
   ctx.fillStyle = config.textFgColor;
 
@@ -329,14 +329,6 @@ const makeVideo = async (
   outFile,
 ) => {
   return new Promise((resolve, reject) => {
-    let translations = [];
-    for (var i = chunks.length - 1; i >= 0; i--) {
-      if (chunks[i].imagePath.includes("translation")) {
-        translations.push(chunks.pop());
-      }
-    }
-    chunks.push(...translations);
-
     const videoDuration = Math.ceil(
       (chunks[chunks.length - 1].timeEnd - chunks[0].timeStart) / 1000,
     );
@@ -344,6 +336,14 @@ const makeVideo = async (
     let complexFilter = [];
     let index = 3;
     let videoStream = "[tmp1]";
+    let translations = [];
+
+    for (var i = chunks.length - 1; i >= 0; i--) {
+      if (chunks[i].imagePath.includes("translation")) {
+        translations.push(chunks.pop());
+      }
+    }
+    chunks.push(...translations);
 
     command = command
       .input(audioPath)
