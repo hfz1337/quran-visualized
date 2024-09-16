@@ -146,9 +146,7 @@ const createWaterMark = (sura, ayahRange) => {
     config.height / 5 + 120,
   );
 
-  const imagePath = "/tmp/".concat(
-    mktemp.createFileSync("XXXXXXXX.svg", { dryRun: true }),
-  );
+  const imagePath = mktemp.createFileSync("/tmp/XXXXXXXX.svg", { dryRun: true });
   const svgData = canvas.toBuffer();
   fs.writeFileSync(imagePath, svgData);
   return imagePath;
