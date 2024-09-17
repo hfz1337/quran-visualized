@@ -361,10 +361,10 @@ const makeVideo = async (
         .input(chunk.imagePath)
         .inputOptions(["-loop 1", `-t ${videoDuration}`]);
       complexFilter.push(
-        `[${index}:v]scale=1080:1920,fade=t=in:st=${(chunk.timeStart - chunks[0].timeStart) / 1000}:d=0.5:alpha=1,fade=t=out:st=${(chunk.timeEnd - chunks[0].timeStart) / 1000 - 0.5}:d=0.5:alpha=1[ov${index - 1}]`,
+        `[${index}:v]scale=1080:1920,fade=t=in:st=${Math.max(chunk.timeStart - chunks[0].timeStart, 0) / 1000}:d=0.5:alpha=1,fade=t=out:st=${(chunk.timeEnd - chunks[0].timeStart) / 1000 - 0.5}:d=0.5:alpha=1[ov${index - 1}]`,
       );
       complexFilter.push(
-        `${videoStream}[ov${index - 1}]overlay=0:0:enable='between(t,${(chunk.timeStart - chunks[0].timeStart) / 1000},${(chunk.timeEnd - chunks[0].timeStart) / 1000})'[tmp${index - 1}]`,
+        `${videoStream}[ov${index - 1}]overlay=0:0:enable='between(t,${Math.max(chunk.timeStart - chunks[0].timeStart, 0) / 1000},${(chunk.timeEnd - chunks[0].timeStart) / 1000})'[tmp${index - 1}]`,
       );
       videoStream = `[tmp${index - 1}]`;
       index++;
