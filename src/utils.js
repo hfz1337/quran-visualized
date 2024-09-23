@@ -136,7 +136,7 @@ const createWaterMark = (sura, ayahRange) => {
   ctx.font = "36px Helvetica";
   ctx.fillText(
     config.chapters[sura]
-      .concat("  ")
+      .concat(" ")
       .concat(
         ayahRange.start === ayahRange.end
           ? ayahRange.start.toString()
