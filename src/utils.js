@@ -270,7 +270,9 @@ const getAyahChunks = async (sura, ayah, verseTimings) => {
             });
 
             lines.forEach((line) => {
-              const timeStart = mergedSegments[line.wordStart][1];
+              const timeStart = line.wordStart < mergedSegments.length
+                  ? mergedSegments[line.wordStart][1]
+                  : mergedSegments[mergedSegments.length - 1][1];
               const timeEnd =
                 line.wordEnd < mergedSegments.length
                   ? mergedSegments[line.wordEnd][2]
